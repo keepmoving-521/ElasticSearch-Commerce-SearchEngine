@@ -1,2 +1,75 @@
-# ElasticSearch-Commerce-SearchEngine
-A high-performance e-commerce search and recommendation engine powered by Elasticsearch, Kafka, and Redis. Designed for complex querying, real-time data synchronization, and enterprise-level architecture. (一款基于 Elasticsearch、Kafka 和 Redis 构建的高性能电商搜索与个性化推荐引擎。专为复杂查询、实时数据同步及企业级架构设计。)
+# Large-scale E-commerce Search & Recommendation
+
+面向大型电商场景的商品搜索与个性化推荐系统。项目采用 Python、FastAPI、
+Elasticsearch、PostgreSQL、Redis 和 Kafka，使用模块化单体作为起点，并通过清晰的
+领域边界为后续独立部署和服务拆分保留空间。
+
+## Architecture
+
+```text
+Client
+  |
+  v
+FastAPI (API / Application)
+  |
+  +-- Catalog Domain
+  +-- Search Domain -------- Elasticsearch
+  +-- Recommendation Domain - Redis / Feature Store
+  +-- User Domain ----------- PostgreSQL
+  |
+  +-------------------------- Kafka
+```
+
+代码遵循依赖倒置原则：领域层不依赖 Web 框架、数据库或消息系统；应用层编排用例；
+基础设施层实现外部系统适配器；API 层只负责协议转换。
+
+## Quick Start
+
+要求 Python 3.12+，推荐使用 [uv](https://docs.astral.sh/uv/) 管理环境。
+
+```bash
+cp .env.example .env
+uv sync --all-groups
+uv run uvicorn commerce_search.main:app --reload
+```
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+uv sync --all-groups
+uv run uvicorn commerce_search.main:app --reload
+```
+
+启动完整的本地基础设施：
+
+```bash
+docker compose up -d
+```
+
+服务启动后访问：
+
+- API 文档: http://localhost:8000/docs
+- 存活检查: http://localhost:8000/api/v1/health/live
+- 就绪检查: http://localhost:8000/api/v1/health/ready
+
+## Development
+
+```bash
+make format
+make lint
+make test
+```
+
+主要目录：
+
+```text
+src/commerce_search/
+├── api/              # HTTP 协议、路由、请求/响应模型
+├── application/      # 用例编排、命令、查询
+├── domain/           # 领域实体、值对象、仓储接口
+├── infrastructure/   # Elasticsearch、Redis、DB、Kafka 适配器
+└── shared/           # 配置、日志、异常等跨模块能力
+```
+
+详细设计见 [docs/architecture.md](docs/architecture.md)。
