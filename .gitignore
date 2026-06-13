@@ -221,3 +221,5 @@ __marimo__/
 .env.*
 !.env.example
 logs/
+/.env.example
+/.github/workflows/ci.yml
