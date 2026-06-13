@@ -41,6 +41,33 @@ uv sync --all-groups
 uv run uvicorn commerce_search.main:app --reload
 ```
 
+### 使用 pip
+
+如果没有安装 `uv`，也可以使用 Python 自带的 `venv` 和 `pip`。第三方依赖仍从
+`pyproject.toml` 安装，不需要单独维护 `requirements.txt`。
+
+Linux / macOS:
+
+```bash
+cp .env.example .env
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e .
+python -m uvicorn commerce_search.main:app --reload
+```
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e .
+python -m uvicorn commerce_search.main:app --reload
+```
+
 启动完整的本地基础设施：
 
 ```bash
