@@ -5,8 +5,14 @@ def test_liveness(client: TestClient) -> None:
     response = client.get("/api/v1/health/live")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
-    assert response.headers["X-Request-ID"]
+    request_id = response.headers["X-Request-ID"]
+    assert response.json() == {
+        "code": "SUCCESS",
+        "message": "Success",
+        "data": {"status": "ok"},
+        "request_id": request_id,
+        "errors": None,
+    }
 
 
 def test_preserves_client_request_id(client: TestClient) -> None:
@@ -17,3 +23,4 @@ def test_preserves_client_request_id(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.headers["X-Request-ID"] == "request-from-gateway"
+    assert response.json()["request_id"] == "request-from-gateway"

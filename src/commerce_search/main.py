@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 
+from commerce_search.api.exception_handlers import register_exception_handlers
 from commerce_search.api.router import api_router
 from commerce_search.shared.config import get_settings
 from commerce_search.shared.logging import configure_logging
@@ -31,6 +32,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     app.add_middleware(RequestContextMiddleware)
+    register_exception_handlers(app)
     app.include_router(api_router, prefix=settings.api_prefix)
     return app
 

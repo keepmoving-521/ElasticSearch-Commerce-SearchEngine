@@ -2,9 +2,15 @@ from uuid import uuid4
 
 import structlog
 from starlette.datastructures import MutableHeaders
+from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 REQUEST_ID_HEADER = "X-Request-ID"
+REQUEST_ID_STATE_KEY = "request_id"
+
+
+def get_request_id(request: Request) -> str:
+    return str(getattr(request.state, REQUEST_ID_STATE_KEY, "unknown"))
 
 
 class RequestContextMiddleware:
@@ -18,6 +24,7 @@ class RequestContextMiddleware:
 
         headers = dict(scope["headers"])
         request_id = headers.get(REQUEST_ID_HEADER.lower().encode(), b"").decode() or str(uuid4())
+        scope.setdefault("state", {})[REQUEST_ID_STATE_KEY] = request_id
         structlog.contextvars.clear_contextvars()
         structlog.contextvars.bind_contextvars(request_id=request_id)
 
