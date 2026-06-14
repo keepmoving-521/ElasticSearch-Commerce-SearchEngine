@@ -102,3 +102,5 @@ src/commerce_search/
 详细设计见 [docs/architecture.md](docs/architecture.md)。
 
 API 响应与异常约定见 [docs/api-conventions.md](docs/api-conventions.md)。
+
+开发、测试和生产环境配置见 [docs/configuration.md](docs/configuration.md)。
