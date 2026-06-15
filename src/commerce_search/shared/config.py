@@ -67,6 +67,20 @@ class Settings(BaseSettings):
         default=SecretStr("commerce"),
         validation_alias="POSTGRES_PASSWORD",
     )
+    postgres_pool_size: int = Field(default=10, validation_alias="POSTGRES_POOL_SIZE")
+    postgres_max_overflow: int = Field(
+        default=20,
+        validation_alias="POSTGRES_MAX_OVERFLOW",
+    )
+    postgres_pool_timeout: int = Field(
+        default=30,
+        validation_alias="POSTGRES_POOL_TIMEOUT",
+    )
+    postgres_pool_recycle: int = Field(
+        default=1800,
+        validation_alias="POSTGRES_POOL_RECYCLE",
+    )
+    postgres_echo: bool = Field(default=False, validation_alias="POSTGRES_ECHO")
 
     elasticsearch_url: str = Field(
         default="http://localhost:9200",

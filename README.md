@@ -104,3 +104,5 @@ src/commerce_search/
 API 响应与异常约定见 [docs/api-conventions.md](docs/api-conventions.md)。
 
 开发、测试和生产环境配置见 [docs/configuration.md](docs/configuration.md)。
+
+数据库连接池与事务约定见 [docs/database.md](docs/database.md)。

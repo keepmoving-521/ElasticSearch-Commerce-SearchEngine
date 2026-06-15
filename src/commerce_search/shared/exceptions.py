@@ -48,3 +48,13 @@ class ConflictError(AppError):
         code: str = ErrorCode.CONFLICT,
     ) -> None:
         super().__init__(code=code, message=message, status_code=409)
+
+
+class ServiceUnavailableError(AppError):
+    def __init__(
+        self,
+        message: str = "Service temporarily unavailable",
+        *,
+        code: str = ErrorCode.SERVICE_UNAVAILABLE,
+    ) -> None:
+        super().__init__(code=code, message=message, status_code=503)

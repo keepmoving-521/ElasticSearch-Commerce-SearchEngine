@@ -11,8 +11,10 @@ requires-python = ">=3.12"
 license = { file = "LICENSE" }
 authors = [{ name = "Commerce Search Team" }]
 dependencies = [
+    "asyncpg>=0.31.0",
     "fastapi>=0.115,<1.0",
     "pydantic-settings>=2.7,<3.0",
+    "sqlalchemy[asyncio]==2.0.50",
     "structlog>=24.4,<26.0",
     "uvicorn[standard]>=0.34,<1.0",
 ]
