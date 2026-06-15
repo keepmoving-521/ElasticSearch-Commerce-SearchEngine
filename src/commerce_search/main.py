@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 from commerce_search.api.exception_handlers import register_exception_handlers
 from commerce_search.api.router import api_router
-from commerce_search.infrastructure.database import DatabaseManager
+from commerce_search.infrastructure.clients import InfrastructureClients
 from commerce_search.shared.config import get_settings
 from commerce_search.shared.logging import configure_logging
 from commerce_search.shared.middleware import RequestContextMiddleware
@@ -17,13 +17,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     configure_logging(settings.log_level)
     logger = structlog.get_logger(__name__)
-    database = DatabaseManager.from_settings(settings)
-    app.state.database = database
+    infrastructure = InfrastructureClients.from_settings(settings)
+    app.state.infrastructure = infrastructure
+    app.state.database = infrastructure.database
     await logger.ainfo("application_started", environment=settings.environment)
     try:
         yield
     finally:
-        await database.dispose()
+        await infrastructure.close()
         await logger.ainfo("application_stopped")
 
 

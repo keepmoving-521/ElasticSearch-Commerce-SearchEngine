@@ -86,13 +86,41 @@ class Settings(BaseSettings):
         default="http://localhost:9200",
         validation_alias="ELASTICSEARCH_URL",
     )
+    elasticsearch_request_timeout: float = Field(
+        default=3.0,
+        validation_alias="ELASTICSEARCH_REQUEST_TIMEOUT",
+    )
+    elasticsearch_max_retries: int = Field(
+        default=3,
+        validation_alias="ELASTICSEARCH_MAX_RETRIES",
+    )
     redis_url: str = Field(
         default="redis://localhost:6379/0",
         validation_alias="REDIS_URL",
     )
+    redis_key_prefix: str = Field(
+        default="commerce-search",
+        validation_alias="REDIS_KEY_PREFIX",
+    )
+    redis_max_connections: int = Field(
+        default=50,
+        validation_alias="REDIS_MAX_CONNECTIONS",
+    )
+    redis_socket_timeout: float = Field(
+        default=3.0,
+        validation_alias="REDIS_SOCKET_TIMEOUT",
+    )
     kafka_bootstrap_servers: str = Field(
         default="localhost:9092",
         validation_alias="KAFKA_BOOTSTRAP_SERVERS",
+    )
+    kafka_client_id: str = Field(
+        default="commerce-search",
+        validation_alias="KAFKA_CLIENT_ID",
+    )
+    kafka_request_timeout_ms: int = Field(
+        default=30000,
+        validation_alias="KAFKA_REQUEST_TIMEOUT_MS",
     )
 
     @field_validator("environment", mode="before")
@@ -142,6 +170,12 @@ class Settings(BaseSettings):
     @property
     def is_test(self) -> bool:
         return self.environment == Environment.TEST
+
+    @property
+    def kafka_servers(self) -> list[str]:
+        return [
+            server.strip() for server in self.kafka_bootstrap_servers.split(",") if server.strip()
+        ]
 
 
 def load_settings(environment: Environment | str | None = None) -> Settings:

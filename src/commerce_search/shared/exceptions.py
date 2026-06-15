@@ -56,5 +56,11 @@ class ServiceUnavailableError(AppError):
         message: str = "Service temporarily unavailable",
         *,
         code: str = ErrorCode.SERVICE_UNAVAILABLE,
+        errors: Sequence[Mapping[str, Any]] | None = None,
     ) -> None:
-        super().__init__(code=code, message=message, status_code=503)
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=503,
+            errors=errors,
+        )

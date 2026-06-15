@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
-from commerce_search.infrastructure.database.dependencies import get_database_manager
+from commerce_search.infrastructure.clients import InfrastructureClients
+from commerce_search.infrastructure.dependencies import get_infrastructure_clients
 from commerce_search.main import app
 
 
@@ -29,12 +30,22 @@ def test_preserves_client_request_id(client: TestClient) -> None:
     assert response.json()["request_id"] == "request-from-gateway"
 
 
-def test_readiness_returns_503_when_database_is_unavailable() -> None:
-    class UnavailableDatabase:
+def test_readiness_reports_unavailable_dependencies() -> None:
+    class HealthyClient:
+        async def ping(self) -> None:
+            return None
+
+    class UnavailableClient:
         async def ping(self) -> None:
             raise OSError("connection refused")
 
-    app.dependency_overrides[get_database_manager] = lambda: UnavailableDatabase()
+    clients = InfrastructureClients(
+        database=UnavailableClient(),  # type: ignore[arg-type]
+        elasticsearch=HealthyClient(),  # type: ignore[arg-type]
+        redis=UnavailableClient(),  # type: ignore[arg-type]
+        kafka=HealthyClient(),  # type: ignore[arg-type]
+    )
+    app.dependency_overrides[get_infrastructure_clients] = lambda: clients
     try:
         with TestClient(app) as test_client:
             response = test_client.get("/api/v1/health/ready")
@@ -42,5 +53,8 @@ def test_readiness_returns_503_when_database_is_unavailable() -> None:
         app.dependency_overrides.clear()
 
     assert response.status_code == 503
-    assert response.json()["code"] == "DATABASE_UNAVAILABLE"
-    assert response.json()["message"] == "Database is unavailable"
+    assert response.json()["code"] == "INFRASTRUCTURE_UNAVAILABLE"
+    assert {error["field"] for error in response.json()["errors"]} == {
+        "database",
+        "redis",
+    }
