@@ -1,46 +1,40 @@
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
-
-import structlog
 from fastapi import FastAPI
 
 from commerce_search.api.exception_handlers import register_exception_handlers
 from commerce_search.api.router import api_router
-from commerce_search.infrastructure.clients import InfrastructureClients
-from commerce_search.shared.config import get_settings
-from commerce_search.shared.logging import configure_logging
+from commerce_search.bootstrap.lifecycle import (
+    ContainerFactory,
+    create_lifespan,
+)
+from commerce_search.shared.config import Settings, get_settings
 from commerce_search.shared.middleware import RequestContextMiddleware
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    settings = get_settings()
-    configure_logging(settings.log_level)
-    logger = structlog.get_logger(__name__)
-    infrastructure = InfrastructureClients.from_settings(settings)
-    app.state.infrastructure = infrastructure
-    app.state.database = infrastructure.database
-    await logger.ainfo("application_started", environment=settings.environment)
-    try:
-        yield
-    finally:
-        await infrastructure.close()
-        await logger.ainfo("application_stopped")
-
-
-def create_app() -> FastAPI:
-    settings = get_settings()
+def create_app(
+    settings: Settings | None = None,
+    *,
+    container_factory: ContainerFactory | None = None,
+) -> FastAPI:
+    resolved_settings = settings or get_settings()
+    lifespan = (
+        create_lifespan(
+            resolved_settings,
+            container_factory=container_factory,
+        )
+        if container_factory is not None
+        else create_lifespan(resolved_settings)
+    )
     app = FastAPI(
-        title=settings.app_name,
+        title=resolved_settings.app_name,
         version="0.1.0",
-        debug=settings.debug,
-        docs_url="/docs" if settings.docs_enabled else None,
-        redoc_url="/redoc" if settings.docs_enabled else None,
+        debug=resolved_settings.debug,
+        docs_url="/docs" if resolved_settings.docs_enabled else None,
+        redoc_url="/redoc" if resolved_settings.docs_enabled else None,
         lifespan=lifespan,
     )
     app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
-    app.include_router(api_router, prefix=settings.api_prefix)
+    app.include_router(api_router, prefix=resolved_settings.api_prefix)
     return app
 
 

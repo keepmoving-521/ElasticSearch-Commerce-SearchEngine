@@ -1,12 +1,11 @@
 import asyncio
-from typing import Annotated, Literal
+from typing import Literal
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Request, status
 from pydantic import BaseModel
 
 from commerce_search.api.schemas import ApiResponse, success_response
-from commerce_search.infrastructure.clients import InfrastructureClients
-from commerce_search.infrastructure.dependencies import get_infrastructure_clients
+from commerce_search.infrastructure.dependencies import InfrastructureDep
 from commerce_search.shared.exceptions import ServiceUnavailableError
 from commerce_search.shared.middleware import get_request_id
 
@@ -42,10 +41,7 @@ async def liveness(request: Request) -> ApiResponse[HealthData]:
 )
 async def readiness(
     request: Request,
-    clients: Annotated[
-        InfrastructureClients,
-        Depends(get_infrastructure_clients),
-    ],
+    clients: InfrastructureDep,
 ) -> ApiResponse[ReadinessData]:
     probes = {
         "database": clients.database.ping(),

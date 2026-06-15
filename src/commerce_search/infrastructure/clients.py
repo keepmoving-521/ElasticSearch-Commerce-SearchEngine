@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Awaitable
 
 from commerce_search.infrastructure.cache import RedisManager
 from commerce_search.infrastructure.database import DatabaseManager
@@ -31,9 +32,26 @@ class InfrastructureClients:
         )
 
     async def close(self) -> None:
-        await asyncio.gather(
-            self.database.dispose(),
-            self.elasticsearch.close(),
-            self.redis.close(),
-            self.kafka.close(),
+        operations: dict[str, Awaitable[None]] = {
+            "database": self.database.dispose(),
+            "elasticsearch": self.elasticsearch.close(),
+            "redis": self.redis.close(),
+            "kafka": self.kafka.close(),
+        }
+        results = await asyncio.gather(
+            *operations.values(),
+            return_exceptions=True,
         )
+        cancellation = next(
+            (exception for exception in results if isinstance(exception, asyncio.CancelledError)),
+            None,
+        )
+        if cancellation is not None:
+            raise cancellation
+
+        failures = [exception for exception in results if isinstance(exception, Exception)]
+        if failures:
+            raise ExceptionGroup(
+                "One or more infrastructure clients failed to close",
+                failures,
+            )

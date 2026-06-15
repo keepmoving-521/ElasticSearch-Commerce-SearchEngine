@@ -1,15 +1,11 @@
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from commerce_search.infrastructure.database.manager import DatabaseManager
-
-
-def get_database_manager(request: Request) -> DatabaseManager:
-    database: DatabaseManager = request.app.state.database
-    return database
+from commerce_search.infrastructure.dependencies import get_database_manager
 
 
 async def get_db_session(
