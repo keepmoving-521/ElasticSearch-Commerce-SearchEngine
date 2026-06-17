@@ -1,11 +1,13 @@
 import asyncio
+from collections.abc import Awaitable
+from time import perf_counter
 from typing import Literal
 
 from fastapi import APIRouter, Request, status
 from pydantic import BaseModel
 
 from commerce_search.api.schemas import ApiResponse, success_response
-from commerce_search.infrastructure.dependencies import InfrastructureDep
+from commerce_search.infrastructure.dependencies import InfrastructureDep, SettingsDep
 from commerce_search.shared.exceptions import ServiceUnavailableError
 from commerce_search.shared.middleware import get_request_id
 
@@ -16,8 +18,23 @@ class HealthData(BaseModel):
     status: Literal["ok"]
 
 
+class ComponentHealth(BaseModel):
+    status: Literal["ok"]
+    latency_ms: float
+
+
 class ReadinessData(HealthData):
-    components: dict[str, Literal["ok"]]
+    components: dict[str, ComponentHealth]
+
+
+async def probe_component(
+    operation: Awaitable[None],
+    *,
+    timeout_seconds: float,
+) -> float:
+    started_at = perf_counter()
+    await asyncio.wait_for(operation, timeout=timeout_seconds)
+    return round((perf_counter() - started_at) * 1000, 2)
 
 
 @router.get(
@@ -42,6 +59,7 @@ async def liveness(request: Request) -> ApiResponse[HealthData]:
 async def readiness(
     request: Request,
     clients: InfrastructureDep,
+    settings: SettingsDep,
 ) -> ApiResponse[ReadinessData]:
     probes = {
         "database": clients.database.ping(),
@@ -49,11 +67,24 @@ async def readiness(
         "redis": clients.redis.ping(),
         "kafka": clients.kafka.ping(),
     }
-    results = await asyncio.gather(*probes.values(), return_exceptions=True)
+    results = await asyncio.gather(
+        *(
+            probe_component(
+                operation,
+                timeout_seconds=settings.health_check_timeout_seconds,
+            )
+            for operation in probes.values()
+        ),
+        return_exceptions=True,
+    )
     failed_components = [
         {
             "field": component,
-            "message": "Dependency health check failed",
+            "message": (
+                "Dependency health check timed out"
+                if isinstance(result, TimeoutError)
+                else "Dependency health check failed"
+            ),
             "type": type(result).__name__,
         }
         for component, result in zip(probes, results, strict=True)
@@ -69,7 +100,14 @@ async def readiness(
     return success_response(
         ReadinessData(
             status="ok",
-            components=dict.fromkeys(probes, "ok"),
+            components={
+                component: ComponentHealth(
+                    status="ok",
+                    latency_ms=latency,
+                )
+                for component, latency in zip(probes, results, strict=True)
+                if isinstance(latency, float)
+            },
         ),
         request_id=get_request_id(request),
     )

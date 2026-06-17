@@ -18,7 +18,12 @@ def create_lifespan(
 ) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        configure_logging(settings.log_level)
+        configure_logging(
+            settings.log_level,
+            log_format=settings.log_format,
+            service_name=settings.app_name,
+            environment=settings.environment,
+        )
         logger = structlog.get_logger(__name__)
         container = container_factory(settings)
         app.state.container = container

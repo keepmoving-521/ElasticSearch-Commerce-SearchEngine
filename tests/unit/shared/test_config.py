@@ -26,6 +26,7 @@ def test_development_defaults_enable_debug_logging() -> None:
 
     assert settings.debug is True
     assert settings.log_level == "DEBUG"
+    assert settings.log_format == "console"
     assert settings.docs_enabled is True
 
 
@@ -35,10 +36,12 @@ def test_explicit_development_values_are_preserved() -> None:
         environment=Environment.DEVELOPMENT,
         debug=False,
         log_level="WARNING",
+        configured_log_format="json",
     )
 
     assert settings.debug is False
     assert settings.log_level == "WARNING"
+    assert settings.log_format == "json"
 
 
 def test_local_environment_is_supported_as_legacy_alias() -> None:
@@ -80,5 +83,6 @@ def test_safe_production_configuration_disables_docs() -> None:
 
     assert settings.environment == Environment.PRODUCTION
     assert settings.debug is False
+    assert settings.log_format == "json"
     assert settings.docs_enabled is False
     assert str(settings.postgres_password) == "**********"

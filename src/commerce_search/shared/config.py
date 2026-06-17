@@ -1,7 +1,7 @@
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -57,6 +57,26 @@ class Settings(BaseSettings):
     )
     debug: bool = Field(default=False, validation_alias="APP_DEBUG")
     log_level: str = Field(default="INFO", validation_alias="APP_LOG_LEVEL")
+    configured_log_format: Literal["json", "console"] | None = Field(
+        default=None,
+        validation_alias="APP_LOG_FORMAT",
+    )
+    access_log_enabled: bool = Field(
+        default=True,
+        validation_alias="APP_ACCESS_LOG_ENABLED",
+    )
+    request_id_max_length: int = Field(
+        default=128,
+        ge=16,
+        le=256,
+        validation_alias="APP_REQUEST_ID_MAX_LENGTH",
+    )
+    health_check_timeout_seconds: float = Field(
+        default=2.0,
+        gt=0,
+        le=30,
+        validation_alias="APP_HEALTH_CHECK_TIMEOUT_SECONDS",
+    )
     api_prefix: str = Field(default="/api/v1", validation_alias="APP_API_PREFIX")
 
     postgres_host: str = Field(default="localhost", validation_alias="POSTGRES_HOST")
@@ -134,7 +154,6 @@ class Settings(BaseSettings):
             self.debug = self.environment == Environment.DEVELOPMENT
         if "log_level" not in self.model_fields_set:
             self.log_level = "DEBUG" if self.environment == Environment.DEVELOPMENT else "INFO"
-
         if self.environment == Environment.TEST:
             self.debug = False
         if self.environment == Environment.PRODUCTION:
@@ -166,6 +185,12 @@ class Settings(BaseSettings):
     @property
     def docs_enabled(self) -> bool:
         return self.environment != Environment.PRODUCTION
+
+    @property
+    def log_format(self) -> Literal["json", "console"]:
+        if self.configured_log_format is not None:
+            return self.configured_log_format
+        return "console" if self.environment == Environment.DEVELOPMENT else "json"
 
     @property
     def is_test(self) -> bool:

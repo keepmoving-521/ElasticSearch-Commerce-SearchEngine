@@ -32,7 +32,11 @@ def create_app(
         redoc_url="/redoc" if resolved_settings.docs_enabled else None,
         lifespan=lifespan,
     )
-    app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(
+        RequestContextMiddleware,
+        access_log_enabled=resolved_settings.access_log_enabled,
+        request_id_max_length=resolved_settings.request_id_max_length,
+    )
     register_exception_handlers(app)
     app.include_router(api_router, prefix=resolved_settings.api_prefix)
     return app

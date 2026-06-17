@@ -112,3 +112,5 @@ Elasticsearch、Redis 和 Kafka 客户端约定见
 
 依赖注入与应用生命周期约定见
 [docs/dependency-injection.md](docs/dependency-injection.md)。
+
+日志、请求 ID 和健康检查约定见 [docs/observability.md](docs/observability.md)。
